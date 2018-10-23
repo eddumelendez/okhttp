@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nullable;
 import okhttp3.internal.http.HttpHeaders;
+import okhttp3.internal.http2.Header;
 import okio.Buffer;
 import okio.BufferedSource;
 
@@ -53,6 +54,8 @@ public final class Response implements Closeable {
   final @Nullable Response priorResponse;
   final long sentRequestAtMillis;
   final long receivedResponseAtMillis;
+  final HttpSink httpSink;
+  //final @Nullable Header.Listener headersListener;
 
   private volatile @Nullable CacheControl cacheControl; // Lazily initialized.
 
@@ -69,6 +72,8 @@ public final class Response implements Closeable {
     this.priorResponse = builder.priorResponse;
     this.sentRequestAtMillis = builder.sentRequestAtMillis;
     this.receivedResponseAtMillis = builder.receivedResponseAtMillis;
+    this.httpSink = builder.httpSink;
+    //this.headersListener = builder.headersListener;
   }
 
   /**
@@ -134,6 +139,16 @@ public final class Response implements Closeable {
 
   public Headers headers() {
     return headers;
+  }
+
+  /**
+   * Should work for any trailers actually right?
+   *
+   * TODO: what's the first value we send? Should we callback with the initial set?
+   */
+  public void headersListener(Header.Listener headersListener) {
+    headersListener.onHeaders(this.headers);
+    // TODO(oldergod) something's weird here, we should have the listener set and react on new headers coming from somewhere.
   }
 
   /**
@@ -301,6 +316,10 @@ public final class Response implements Closeable {
         + '}';
   }
 
+  public HttpSink httpSink() {
+    return httpSink;
+  }
+
   public static class Builder {
     @Nullable Request request;
     @Nullable Protocol protocol;
@@ -314,6 +333,8 @@ public final class Response implements Closeable {
     @Nullable Response priorResponse;
     long sentRequestAtMillis;
     long receivedResponseAtMillis;
+    HttpSink httpSink;
+    @Nullable Header.Listener headersListener;
 
     public Builder() {
       headers = new Headers.Builder();
@@ -332,6 +353,8 @@ public final class Response implements Closeable {
       this.priorResponse = response.priorResponse;
       this.sentRequestAtMillis = response.sentRequestAtMillis;
       this.receivedResponseAtMillis = response.receivedResponseAtMillis;
+      this.httpSink = response.httpSink;
+      //this.headersListener = response.headersListener;
     }
 
     public Builder request(Request request) {
@@ -436,6 +459,16 @@ public final class Response implements Closeable {
 
     public Builder receivedResponseAtMillis(long receivedResponseAtMillis) {
       this.receivedResponseAtMillis = receivedResponseAtMillis;
+      return this;
+    }
+
+    public Builder httpSink(@Nullable HttpSink httpSink) {
+      this.httpSink = httpSink;
+      return this;
+    }
+
+    public Builder headersListener(@Nullable Header.Listener headersListener) {
+      this.headersListener = headersListener;
       return this;
     }
 

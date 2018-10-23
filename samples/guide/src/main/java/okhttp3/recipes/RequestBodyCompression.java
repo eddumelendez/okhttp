@@ -21,6 +21,7 @@ import com.squareup.moshi.Types;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import okhttp3.HttpSink;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
